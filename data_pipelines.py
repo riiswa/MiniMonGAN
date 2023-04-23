@@ -23,7 +23,8 @@ def extract_left_part(image: torch.Tensor):
 def build_data_pipe(root_path: str = "data/") -> IterDataPipe:
     icons_path = os.path.join(root_path, "Icons")
     front_path = os.path.join(root_path, "Front")
-    fn1, fn2 = pipes.IterableWrapper(set(os.listdir(icons_path)).intersection(set(os.listdir(front_path)))).fork(2)
+    img_paths = set(os.listdir(icons_path)).intersection(set(os.listdir(front_path)))
+    fn1, fn2 = pipes.IterableWrapper(img_paths).fork(2)
 
     front_sprites = (
         fn1.map(lambda f: os.path.join(front_path, f))
@@ -40,4 +41,4 @@ def build_data_pipe(root_path: str = "data/") -> IterDataPipe:
         .map(normalize_image)
     )
 
-    return pipes.Zipper(front_sprites, icon_sprites)
+    return pipes.Zipper(front_sprites, icon_sprites), len(img_paths)

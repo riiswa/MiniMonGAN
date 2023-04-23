@@ -42,8 +42,10 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = build_data_pipe().shuffle()
-    dataloader = DataLoader(dataset, batch_size=batch_size)
+    dataset, n_images = build_data_pipe().shuffle()
+    train_dataset, valid_dataset = dataset.random_split(total_length=n_images, weights={"train": 0.95, "valid": 0.05})
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size)
 
     generator = Generator()
     generator.to(device)
@@ -60,15 +62,18 @@ if __name__ == "__main__":
     l1 = nn.L1Loss()
     bce = nn.BCELoss()
 
-    test_fronts, _ = next(iter(dataloader))
-    test_fronts = test_fronts.to(device)
+    train_test_fronts, _ = next(iter(train_dataloader))
+    train_test_fronts = train_test_fronts.to(device)
+
+    valid_test_fronts, _ = next(iter(valid_dataloader))
+    valid_test_fronts = valid_test_fronts.to(device)
 
     writer = SummaryWriter()
 
     for epoch in tqdm(range(epochs)):
         generator_epoch_loss = torch.tensor(0.0)
         discriminator_epoch_loss = torch.tensor(0.0)
-        for i, (fronts, icons) in enumerate(dataloader):
+        for i, (fronts, icons) in enumerate(train_dataloader):
             fronts = fronts.to(device)
             icons = icons.to(device)
             fake_target = torch.zeros((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
@@ -91,13 +96,42 @@ if __name__ == "__main__":
             discriminator_loss.backward()
             discriminator_optimizer.step()
             discriminator_epoch_loss += discriminator_loss.item()
-        writer.add_scalar("generator loss", generator_epoch_loss / i, epoch)
+        writer.add_scalar("train generator loss", generator_epoch_loss / i, epoch)
         writer.add_scalar(
-            "discriminator loss", discriminator_epoch_loss / i, epoch
+            "train discriminator loss", discriminator_epoch_loss / i, epoch
         )
+
         if i % 10 == 0:
-            tests_icons = generator.forward(test_fronts)
-            fig = visualize_sprites(test_fronts, tests_icons)
-            writer.add_figure("generated_images", fig, epoch)
+            tests_icons = generator.forward(train_test_fronts)
+            fig = visualize_sprites(train_test_fronts, tests_icons)
+            writer.add_figure("train generated images", fig, epoch)
             plt.close(fig)
 
+            tests_icons = generator.forward(valid_test_fronts)
+            fig = visualize_sprites(valid_test_fronts, tests_icons)
+            writer.add_figure("valid generated images", fig, epoch)
+            plt.close(fig)
+
+        generator_epoch_loss = torch.tensor(0.0)
+        discriminator_epoch_loss = torch.tensor(0.0)
+        for i, (fronts, icons) in enumerate(valid_dataloader):
+            fronts = fronts.to(device)
+            icons = icons.to(device)
+            fake_target = torch.zeros((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
+            valid_target = torch.ones((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
+
+            fake_icons = generator.forward(fronts)
+            generator_loss = bce(
+                discriminator.forward(fake_icons, fronts), valid_target
+            ) + 100 * l1(fake_icons, icons)
+            generator_epoch_loss += generator_loss.item()
+
+            discriminator_loss = 0.5 * (
+                    bce(discriminator.forward(icons, fronts), valid_target)
+                    + bce(discriminator.forward(fake_icons.detach(), fronts), fake_target)
+            )
+            discriminator_epoch_loss += discriminator_loss.item()
+        writer.add_scalar("valid generator loss", generator_epoch_loss / i, epoch)
+        writer.add_scalar(
+            "valid discriminator loss", discriminator_epoch_loss / i, epoch
+        )
