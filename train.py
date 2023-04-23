@@ -24,9 +24,9 @@ def visualize_sprites(fronts, icons, n_rows=4):
         for j in range(n_cols):
             img_index = i//2 + n_rows * j
             if i % 2 == 0:
-                ax[i, j].imshow(unormalize_image(fronts[img_index]).detach().numpy())
+                ax[i, j].imshow(unormalize_image(fronts[img_index]).detach().cpu().numpy())
             else:
-                ax[i, j].imshow(unormalize_image(icons[img_index]).detach().numpy())
+                ax[i, j].imshow(unormalize_image(icons[img_index]).detach().cpu().numpy())
             ax[i, j].axis('off')
     return fig
 
