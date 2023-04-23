@@ -71,8 +71,8 @@ if __name__ == "__main__":
         for i, (fronts, icons) in enumerate(dataloader):
             fronts = fronts.to(device)
             icons = icons.to(device)
-            fake_target = torch.zeros((fronts.size(0) * 8 * 8, 1, 2, 2), device=device)
-            valid_target = torch.ones((fronts.size(0) * 8 * 8, 1, 2, 2), device=device)
+            fake_target = torch.zeros((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
+            valid_target = torch.ones((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
 
             generator_optimizer.zero_grad()
             fake_icons = generator.forward(fronts)

@@ -28,7 +28,7 @@ def build_data_pipe(root_path: str = "data/") -> IterDataPipe:
     front_sprites = (
         fn1.map(lambda f: os.path.join(front_path, f))
         .map(read_image)
-        .map(Resize((64, 64), InterpolationMode.NEAREST))
+        .map(Resize((96, 96), InterpolationMode.NEAREST))
         .map(normalize_image)
     )
 
@@ -36,7 +36,7 @@ def build_data_pipe(root_path: str = "data/") -> IterDataPipe:
         fn2.map(lambda f: os.path.join(icons_path, f))
         .map(read_image)
         .map(extract_left_part)
-        .map(Resize((32, 32), InterpolationMode.NEAREST))
+        .map(Resize((64, 64), InterpolationMode.NEAREST))
         .map(normalize_image)
     )
 

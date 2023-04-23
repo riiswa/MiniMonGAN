@@ -2,6 +2,7 @@ from typing import Optional, List
 
 import torch
 import torch.nn as nn
+from torchvision.io import ImageReadMode
 
 
 class DownsamplingBlock(nn.Module):
@@ -76,7 +77,7 @@ class Generator(nn.Module):
             in_channels=4,
             out_channels=64,
             kernel_size=4,
-            stride=2,
+            stride=3,
             padding=1,
             normalize=False,
         )
@@ -117,8 +118,12 @@ class Generator(nn.Module):
             in_channels=256, out_channels=64, kernel_size=2, stride=2, dropout=False
         )
 
+        self.t_conv6 = UpsamplingBlock(
+            in_channels=128, out_channels=32, kernel_size=2, stride=2, dropout=False
+        )
+
         self.tanh = nn.Tanh()
-        self.output_conv = nn.Conv2d(in_channels=128, out_channels=4, kernel_size=1)
+        self.output_conv = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)
@@ -139,6 +144,7 @@ class Generator(nn.Module):
         x = torch.cat((skip4, self.t_conv3(x)), 1)
         x = torch.cat((skip3, self.t_conv4(x)), 1)
         x = torch.cat((skip2, self.t_conv5(x)), 1)
+        x = self.t_conv6(x)
 
         x = self.tanh(self.output_conv(x))
 
@@ -154,7 +160,7 @@ class Discriminator(nn.Module):
             out_channels=4,
             kernel_size=4,
             stride=2,
-            padding=1,
+            padding=17,
             normalize=False,
         )
         self.conv1 = DownsamplingBlock(
@@ -178,3 +184,4 @@ class Discriminator(nn.Module):
         )
         x = x.permute(2, 3, 0, 1, 4, 5).reshape(-1, 1, self.patch_size, self.patch_size)
         return x
+
