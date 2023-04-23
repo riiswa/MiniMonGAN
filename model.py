@@ -124,7 +124,7 @@ class Generator(nn.Module):
 
         self.tanh = nn.Tanh()
         self.output_conv = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
-        self.avg_pooling = nn.AvgPool2d(4, 4)
+        self.avg_pooling = nn.AvgPool2d(2, 2)
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)
@@ -149,7 +149,7 @@ class Generator(nn.Module):
 
         x = self.tanh(self.output_conv(x))
         x = self.avg_pooling(x)
-        x = x.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
+        x = x.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
 
         return x
 
