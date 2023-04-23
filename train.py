@@ -95,8 +95,9 @@ if __name__ == "__main__":
         writer.add_scalar(
             "discriminator loss", discriminator_epoch_loss / i, epoch
         )
-        tests_icons = generator.forward(test_fronts)
-        fig = visualize_sprites(test_fronts, tests_icons)
-        writer.add_figure("generated_images", fig, epoch)
-        plt.close(fig)
+        if i % 10 == 0:
+            tests_icons = generator.forward(test_fronts)
+            fig = visualize_sprites(test_fronts, tests_icons)
+            writer.add_figure("generated_images", fig, epoch)
+            plt.close(fig)
 
