@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -31,8 +32,13 @@ def visualize_sprites(fronts, icons, n_rows=4):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train')
+    args = parser.parse_args()
+
+    epochs = args.epochs
+
     batch_size = 32
-    epochs = 20
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
