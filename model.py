@@ -124,6 +124,7 @@ class Generator(nn.Module):
 
         self.tanh = nn.Tanh()
         self.output_conv = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
+        self.avg_pooling = nn.AvgPool2d(4, 4)
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)
@@ -147,6 +148,8 @@ class Generator(nn.Module):
         x = self.t_conv6(x)
 
         x = self.tanh(self.output_conv(x))
+        x = self.avg_pooling(x)
+        x = x.repeat_interleave(4, dim=-1).repeat_interleave(4, dim=-2)
 
         return x
 
@@ -184,4 +187,3 @@ class Discriminator(nn.Module):
         )
         x = x.permute(2, 3, 0, 1, 4, 5).reshape(-1, 1, self.patch_size, self.patch_size)
         return x
-
