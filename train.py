@@ -61,6 +61,7 @@ if __name__ == "__main__":
     bce = nn.BCELoss()
 
     test_fronts, _ = next(iter(dataloader))
+    test_fronts = test_fronts.to(device)
 
     writer = SummaryWriter()
 
