@@ -57,7 +57,6 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         fn1.map(lambda f: os.path.join(front_path, f))
         .map(read_image)
         .map(Resize((96, 96), InterpolationMode.NEAREST))
-        .flatmap(lambda img: [rotate(img) for _ in range(4)])
         .map(normalize_image)
     )
 
