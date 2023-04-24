@@ -48,10 +48,10 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = build_data_pipe().shuffle()
-    train_dataset, valid_dataset = dataset.demux(
-        num_instances=2, classifier_fn=lambda _: (torch.rand(1).squeeze() > 0.95).long()
-    )
+    train_dataset, valid_dataset = build_data_pipe()
+    train_dataset = train_dataset.shuffle()
+    valid_dataset = valid_dataset.shuffle()
+
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size)
 
