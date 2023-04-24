@@ -43,8 +43,9 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     dataset, n_images = build_data_pipe()
-    dataset = dataset.shuffle()
     train_dataset, valid_dataset = dataset.random_split(total_length=n_images, weights={"train": 0.95, "valid": 0.05})
+    train_dataset = train_dataset.shuffle()
+    valid_dataset = valid_dataset.shuffle()
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size)
 
