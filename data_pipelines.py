@@ -5,7 +5,7 @@ from typing import Tuple
 import torch
 from torch.utils.data import IterDataPipe
 from torchvision.io import ImageReadMode
-from torchvision.transforms import Resize, InterpolationMode
+from torchvision.transforms import Resize, InterpolationMode, RandomRotation
 from torchvision import io
 import torch.utils.data.datapipes.iter as pipes
 
@@ -32,10 +32,13 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
 
     fn1, fn2 = pipes.IterableWrapper(train_img_paths).fork(2)
 
+    rotate = RandomRotation(degrees=(0, 360))
+
     train_front_sprites = (
         fn1.map(lambda f: os.path.join(front_path, f))
         .map(read_image)
         .map(Resize((96, 96), InterpolationMode.NEAREST))
+        .flatmap(lambda img: [rotate(img) for _ in range(4)])
         .map(normalize_image)
     )
 
@@ -44,6 +47,7 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         .map(read_image)
         .map(extract_left_part)
         .map(Resize((64, 64), InterpolationMode.NEAREST))
+        .flatmap(lambda img: [img for _ in range(4)])
         .map(normalize_image)
     )
 
@@ -53,6 +57,7 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         fn1.map(lambda f: os.path.join(front_path, f))
         .map(read_image)
         .map(Resize((96, 96), InterpolationMode.NEAREST))
+        .flatmap(lambda img: [rotate(img) for _ in range(4)])
         .map(normalize_image)
     )
 
@@ -60,7 +65,6 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         fn2.map(lambda f: os.path.join(icons_path, f))
         .map(read_image)
         .map(extract_left_part)
-        .map(Resize((64, 64), InterpolationMode.NEAREST))
         .map(normalize_image)
     )
 

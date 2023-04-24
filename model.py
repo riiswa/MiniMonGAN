@@ -167,7 +167,7 @@ class Discriminator(nn.Module):
             normalize=False,
         )
         self.conv1 = DownsamplingBlock(
-            in_channels=4,
+            in_channels=8,
             out_channels=64,
             kernel_size=4,
             stride=2,
@@ -178,8 +178,8 @@ class Discriminator(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
-        #source = self.conv0(source)
-        #x = torch.cat((x, source), 1)
+        source = self.conv0(source)
+        x = torch.cat((x, source), 1)
         x = self.conv1(x)
         x = self.sigmoid(self.conv2(x))
         x = x.unfold(2, self.patch_size, self.patch_size).unfold(
