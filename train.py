@@ -113,17 +113,6 @@ if __name__ == "__main__":
             "train discriminator loss", discriminator_epoch_loss / i, epoch
         )
 
-        if i % 10 == 0:
-            tests_icons = generator.forward(train_test_fronts)
-            fig = visualize_sprites(train_test_fronts, tests_icons)
-            writer.add_figure("train generated images", fig, epoch)
-            plt.close(fig)
-
-            tests_icons = generator.forward(valid_test_fronts)
-            fig = visualize_sprites(valid_test_fronts, tests_icons)
-            writer.add_figure("valid generated images", fig, epoch)
-            plt.close(fig)
-
         generator_epoch_loss = torch.tensor(0.0)
         discriminator_epoch_loss = torch.tensor(0.0)
         for i, (fronts, icons) in enumerate(valid_dataloader):
@@ -151,3 +140,14 @@ if __name__ == "__main__":
         writer.add_scalar(
             "valid discriminator loss", discriminator_epoch_loss / i, epoch
         )
+
+        if epoch % 10 == 0:
+            tests_icons = generator.forward(train_test_fronts)
+            fig = visualize_sprites(train_test_fronts, tests_icons)
+            writer.add_figure("train generated images", fig, epoch)
+            plt.close(fig)
+
+            tests_icons = generator.forward(valid_test_fronts)
+            fig = visualize_sprites(valid_test_fronts, tests_icons)
+            writer.add_figure("valid generated images", fig, epoch)
+            plt.close(fig)
