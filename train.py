@@ -1,7 +1,7 @@
 import argparse
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -19,21 +19,27 @@ def visualize_sprites(fronts, icons, n_rows=4):
     fronts = fronts.permute(0, 2, 3, 1)
     icons = icons.permute(0, 2, 3, 1)
     n_cols = fronts.size(0) // n_rows
-    fig, ax = plt.subplots(n_rows * 2,  n_cols, figsize=(10, 9))
+    fig, ax = plt.subplots(n_rows * 2, n_cols, figsize=(10, 9))
     for i in range(n_rows * 2):
         for j in range(n_cols):
-            img_index = i//2 + n_rows * j
+            img_index = i // 2 + n_rows * j
             if i % 2 == 0:
-                ax[i, j].imshow(unormalize_image(fronts[img_index]).detach().cpu().numpy())
+                ax[i, j].imshow(
+                    unormalize_image(fronts[img_index]).detach().cpu().numpy()
+                )
             else:
-                ax[i, j].imshow(unormalize_image(icons[img_index]).detach().cpu().numpy())
-            ax[i, j].axis('off')
+                ax[i, j].imshow(
+                    unormalize_image(icons[img_index]).detach().cpu().numpy()
+                )
+            ax[i, j].axis("off")
     return fig
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train')
+    parser.add_argument(
+        "--epochs", type=int, default=10, help="number of epochs to train"
+    )
     args = parser.parse_args()
 
     epochs = args.epochs
@@ -42,10 +48,10 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset, n_images = build_data_pipe()
-    train_dataset, valid_dataset = dataset.random_split(total_length=n_images, weights={"train": 0.95, "valid": 0.05})
-    train_dataset = train_dataset.shuffle()
-    valid_dataset = valid_dataset.shuffle()
+    dataset = build_data_pipe().shuffle()
+    train_dataset, valid_dataset = dataset.demux(
+        num_instances=2, classifier_fn=lambda _: (torch.rand(1).squeeze() > 0.95).long()
+    )
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size)
 
@@ -78,8 +84,12 @@ if __name__ == "__main__":
         for i, (fronts, icons) in enumerate(train_dataloader):
             fronts = fronts.to(device)
             icons = icons.to(device)
-            fake_target = torch.zeros((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
-            valid_target = torch.ones((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
+            fake_target = torch.zeros(
+                (fronts.size(0) * 16 * 16, 1, 2, 2), device=device
+            )
+            valid_target = torch.ones(
+                (fronts.size(0) * 16 * 16, 1, 2, 2), device=device
+            )
 
             generator_optimizer.zero_grad()
             fake_icons = generator.forward(fronts)
@@ -119,8 +129,12 @@ if __name__ == "__main__":
         for i, (fronts, icons) in enumerate(valid_dataloader):
             fronts = fronts.to(device)
             icons = icons.to(device)
-            fake_target = torch.zeros((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
-            valid_target = torch.ones((fronts.size(0) * 16 * 16, 1, 2, 2), device=device)
+            fake_target = torch.zeros(
+                (fronts.size(0) * 16 * 16, 1, 2, 2), device=device
+            )
+            valid_target = torch.ones(
+                (fronts.size(0) * 16 * 16, 1, 2, 2), device=device
+            )
 
             fake_icons = generator.forward(fronts)
             generator_loss = bce(
@@ -129,8 +143,8 @@ if __name__ == "__main__":
             generator_epoch_loss += generator_loss.item()
 
             discriminator_loss = 0.5 * (
-                    bce(discriminator.forward(icons, fronts), valid_target)
-                    + bce(discriminator.forward(fake_icons.detach(), fronts), fake_target)
+                bce(discriminator.forward(icons, fronts), valid_target)
+                + bce(discriminator.forward(fake_icons.detach(), fronts), fake_target)
             )
             discriminator_epoch_loss += discriminator_loss.item()
         writer.add_scalar("valid generator loss", generator_epoch_loss / i, epoch)
