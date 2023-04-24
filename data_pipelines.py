@@ -7,7 +7,7 @@ from torch.utils.data import IterDataPipe
 from torchvision.io import ImageReadMode
 from torchvision.transforms import Resize, InterpolationMode, RandomRotation
 from torchvision import io
-import torch.utils.data.datapipes.iter as pipes
+import torchdata.datapipes.iter as pipes
 
 
 def read_image(path: str):

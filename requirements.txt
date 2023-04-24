@@ -3,3 +3,4 @@ matplotlib~=3.7.1
 tensorboard==2.12.2
 tqdm~=4.65.0
 torchvision~=0.15.1
+torchdata~=0.6.0
