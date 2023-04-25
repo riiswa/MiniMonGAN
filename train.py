@@ -1,7 +1,7 @@
 import argparse
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -92,10 +92,17 @@ if __name__ == "__main__":
             )
 
             generator_optimizer.zero_grad()
-            fake_icons = generator.forward(fronts)
-            generator_loss = bce(
-                discriminator.forward(fake_icons, fronts), valid_target
-            ) + 100 * l1(fake_icons, icons)
+            fake_icons, dist = generator.forward(fronts)
+            generator_loss = (
+                bce(discriminator.forward(fake_icons, fronts), valid_target)
+                + 100 * l1(fake_icons, icons)
+                + torch.distributions.kl_divergence(
+                    dist,
+                    torch.distributions.Normal(
+                        torch.zeros(dist.batch_shape), torch.ones(dist.batch_shape)
+                    ),
+                ).mean()
+            )
             generator_loss.backward()
             generator_optimizer.step()
             generator_epoch_loss += generator_loss.item()
@@ -125,7 +132,7 @@ if __name__ == "__main__":
                 (fronts.size(0) * 16 * 16, 1, 2, 2), device=device
             )
 
-            fake_icons = generator.forward(fronts)
+            fake_icons, _ = generator.forward(fronts)
             generator_loss = bce(
                 discriminator.forward(fake_icons, fronts), valid_target
             ) + 100 * l1(fake_icons, icons)
@@ -142,12 +149,12 @@ if __name__ == "__main__":
         )
 
         if epoch % 10 == 0:
-            tests_icons = generator.forward(train_test_fronts)
+            tests_icons, _ = generator.forward(train_test_fronts)
             fig = visualize_sprites(train_test_fronts, tests_icons)
             writer.add_figure("train generated images", fig, epoch)
             plt.close(fig)
 
-            tests_icons = generator.forward(valid_test_fronts)
+            tests_icons, _ = generator.forward(valid_test_fronts)
             fig = visualize_sprites(valid_test_fronts, tests_icons)
             writer.add_figure("valid generated images", fig, epoch)
             plt.close(fig)

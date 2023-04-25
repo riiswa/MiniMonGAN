@@ -27,18 +27,15 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
     front_path = os.path.join(root_path, "Front")
     img_paths = set(os.listdir(icons_path)).intersection(set(os.listdir(front_path)))
 
-    valid_img_paths = set(sample(img_paths, int(len(img_paths) * 0.05)))
+    valid_img_paths = set(sample(list(img_paths), int(len(img_paths) * 0.05)))
     train_img_paths = img_paths - valid_img_paths
 
     fn1, fn2 = pipes.IterableWrapper(train_img_paths).fork(2)
-
-    rotate = RandomRotation(degrees=(0, 360))
 
     train_front_sprites = (
         fn1.map(lambda f: os.path.join(front_path, f))
         .map(read_image)
         .map(Resize((96, 96), InterpolationMode.NEAREST))
-        .flatmap(lambda img: [img] + [rotate(img) for _ in range(4)])
         .map(normalize_image)
     )
 
@@ -47,7 +44,6 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         .map(read_image)
         .map(extract_left_part)
         .map(Resize((64, 64), InterpolationMode.NEAREST))
-        .flatmap(lambda img: [img for _ in range(5)])
         .map(normalize_image)
     )
 
@@ -64,6 +60,7 @@ def build_data_pipe(root_path: str = "data/") -> Tuple[IterDataPipe, IterDataPip
         fn2.map(lambda f: os.path.join(icons_path, f))
         .map(read_image)
         .map(extract_left_part)
+        .map(Resize((64, 64), InterpolationMode.NEAREST))
         .map(normalize_image)
     )
 

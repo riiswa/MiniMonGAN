@@ -98,7 +98,7 @@ class Generator(nn.Module):
         )
 
         self.t_conv1 = UpsamplingBlock(
-            in_channels=512,
+            in_channels=256,
             out_channels=512,
             kernel_size=1,
             stride=2,
@@ -125,6 +125,7 @@ class Generator(nn.Module):
         self.tanh = nn.Tanh()
         self.output_conv = nn.Conv2d(in_channels=32, out_channels=4, kernel_size=1)
         self.avg_pooling = nn.AvgPool2d(2, 2)
+        self.softplus = nn.Softplus()
 
     def forward(self, x: torch.Tensor):
         x = self.conv1(x)
@@ -138,6 +139,11 @@ class Generator(nn.Module):
         x = self.conv5(x)
         skip6 = x
         x = self.conv6(x)
+        v = x.squeeze(dim=(-1, -2))
+        mean, std = torch.chunk(v, 2, dim=1)
+        std = self.softplus(std)
+        dist = torch.distributions.Normal(mean, std)
+        x = dist.rsample().unsqueeze(dim=-1).unsqueeze(dim=-1)
 
         # UpSampling
         x = torch.cat((skip6, self.t_conv1(x)), 1)
@@ -151,7 +157,7 @@ class Generator(nn.Module):
         x = self.avg_pooling(x)
         x = x.repeat_interleave(2, dim=-1).repeat_interleave(2, dim=-2)
 
-        return x
+        return x, dist
 
 
 class Discriminator(nn.Module):
@@ -187,3 +193,11 @@ class Discriminator(nn.Module):
         )
         x = x.permute(2, 3, 0, 1, 4, 5).reshape(-1, 1, self.patch_size, self.patch_size)
         return x
+
+
+if __name__ == "__main__":
+    import torchvision.io as io
+
+    img = io.read_image("data/Front/ABOMASNOW.png", io.ImageReadMode.RGB_ALPHA) / 255.0
+    g = Generator()
+    g.forward(torch.cat((img.unsqueeze(0), img.unsqueeze(0))))
