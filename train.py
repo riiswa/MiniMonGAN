@@ -99,7 +99,8 @@ if __name__ == "__main__":
                 + torch.distributions.kl_divergence(
                     dist,
                     torch.distributions.Normal(
-                        torch.zeros(dist.batch_shape), torch.ones(dist.batch_shape)
+                        torch.zeros(dist.batch_shape).to(device),
+                        torch.ones(dist.batch_shape).to(device),
                     ),
                 ).mean()
             )
